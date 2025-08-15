@@ -1,0 +1,22 @@
+{
+  "name": "recnote-backend",
+  "version": "1.0.0",
+  "description": "Backend for RecNote audio transcription app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node api/process-audio.js",
+    "dev": "nodemonapi/process-audio.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "cors": "^2.8.5",
+    "@google/generative-ai": "^0.21.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["audio", "transcription", "gemini", "ai"],
+  "author": "Your Name",
+  "license": "MIT"
+}

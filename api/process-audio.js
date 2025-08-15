@@ -31,18 +31,15 @@ function getMimeType(filename) {
 }
 
 module.exports = async (req, res) => {
-  // Set CORS headers first
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Content-Type', 'application/json');
 
-  // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ 
       error: 'Method not allowed. Only POST requests are accepted.',
@@ -51,7 +48,6 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Handle file upload
     await runMiddleware(req, res, upload.single('audio'));
     
     if (!req.file) {
@@ -69,7 +65,6 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Check for API key
     if (!process.env.GEMINI_API_KEY) {
       return res.status(500).json({ 
         error: 'API key not configured',
@@ -77,7 +72,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    const genAI = new GoogleGenerativeAI('AIzaSyDaWuKehc-fwiyOiSTkXismMeH3Qu22xAA');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const audioPart = {
@@ -99,15 +94,12 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Clean the response text and extract JSON
     const cleanedResponse = responseText.replace(/```json\s*|\s*```/g, '').trim();
     
     let parsedResponse;
     try {
-      // First try to parse the cleaned response directly
       parsedResponse = JSON.parse(cleanedResponse);
     } catch (parseError) {
-      // If that fails, try to extract JSON using regex
       const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch || !jsonMatch[0]) {
         return res.status(500).json({ 
@@ -126,7 +118,6 @@ module.exports = async (req, res) => {
       }
     }
 
-    // Validate the response has required fields
     if (!parsedResponse.transcript && !parsedResponse.summary) {
       return res.status(500).json({ 
         error: 'AI response missing required fields',
@@ -143,7 +134,6 @@ module.exports = async (req, res) => {
   } catch (error) {
     console.error('API Error:', error);
     
-    // Ensure we haven't already sent a response
     if (!res.headersSent) {
       return res.status(500).json({ 
         error: error.message || 'Internal server error',

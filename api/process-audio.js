@@ -68,21 +68,27 @@ module.exports = async (req, res) => {
     const prompt = `Generate a transcript and a concise summary with bullet points of the provided audio file. Format the response as a single JSON object with two keys: "transcript" and "summary".`;
 
     const result = await model.generateContent([prompt, audioPart]);
-    
-    // Check for a valid response
     const responseText = result.response.text();
+  
     if (!responseText) {
       return res.status(500).json({ error: 'API response was not a valid text string.' });
     }
-    
-    const parsedResponse = JSON.parse(responseText.trim());
-
+  
+    // Use a regex to extract the JSON part of the string
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch || !jsonMatch[0]) {
+      return res.status(500).json({ error: 'Failed to find a JSON object in the API response.' });
+    }
+  
+    const jsonString = jsonMatch[0];
+    const parsedResponse = JSON.parse(jsonString);
+  
     res.json({
       transcript: parsedResponse.transcript,
       summary: parsedResponse.summary,
       success: true
     });
-
+  
   } catch (error) {
     console.error('An error occurred:', error);
     // Ensure all errors return a JSON response
